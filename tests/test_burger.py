@@ -67,28 +67,23 @@ class TestBurger:
         assert burger.ingredients[0] == mock_ingredient1
         assert burger.ingredients[1] == mock_ingredient3
 
-    @pytest.mark.parametrize("index_to_remove,expected_remaining,test_description", [
-        (0, 2, "Удаление первого ингредиента"),
-        (1, 2, "Удаление среднего ингредиента"),
-        (2, 2, "Удаление последнего ингредиента"),
+    @pytest.mark.parametrize("index_to_remove,expected_remaining", [
+        (0, 2),
+        (1, 2),
+        (2, 2),
     ])
-    def test_remove_ingredient_parameterized(self, index_to_remove, expected_remaining, test_description):
-        """Параметризованный тест удаления ингредиентов из разных позиций"""
+    def test_remove_ingredient_parameterized(self, index_to_remove, expected_remaining):
+        """Параметризованный тест удаления ингредиентов"""
         burger = Burger()
 
         # Добавляем 3 mock ингредиента
-        mock_ingredients = []
         for i in range(3):
             mock_ingredient = Mock(spec=Ingredient)
             mock_ingredient.get_name.return_value = f"Ингредиент {i}"
-            mock_ingredients.append(mock_ingredient)
             burger.add_ingredient(mock_ingredient)
 
-        # Удаляем ингредиент по указанному индексу
         burger.remove_ingredient(index_to_remove)
-
-        # Проверяем количество оставшихся ингредиентов
-        assert len(burger.ingredients) == expected_remaining, f"Ошибка в: {test_description}"
+        assert len(burger.ingredients) == expected_remaining
 
     def test_move_ingredient(self):
         burger = Burger()
@@ -104,7 +99,6 @@ class TestBurger:
         burger.add_ingredient(mock_ingredient2)
         burger.add_ingredient(mock_ingredient3)
 
-        # Перемещаем элемент с индексом 0 на позицию 2
         burger.move_ingredient(0, 2)
 
         assert burger.ingredients[0] == mock_ingredient2
@@ -112,15 +106,14 @@ class TestBurger:
         assert burger.ingredients[2] == mock_ingredient1
 
     @pytest.mark.parametrize("from_index,to_index,expected_order", [
-        (0, 2, ["Второй", "Третий", "Первый"]),  # Первый -> в конец
-        (2, 0, ["Третий", "Первый", "Второй"]),  # Последний -> в начало
-        (1, 1, ["Первый", "Второй", "Третий"]),  # На ту же позицию
+        (0, 2, ["Второй", "Третий", "Первый"]),
+        (2, 0, ["Третий", "Первый", "Второй"]),
+        (1, 1, ["Первый", "Второй", "Третий"]),
     ])
     def test_move_ingredient_parameterized(self, from_index, to_index, expected_order):
         """Параметризованный тест перемещения ингредиентов"""
         burger = Burger()
 
-        # Создаем ингредиенты с уникальными именами
         ingredients_data = [
             ("Первый", Mock(spec=Ingredient)),
             ("Второй", Mock(spec=Ingredient)),
@@ -131,28 +124,23 @@ class TestBurger:
             mock.get_name.return_value = name
             burger.add_ingredient(mock)
 
-        # Перемещаем ингредиент
         burger.move_ingredient(from_index, to_index)
-
-        # Проверяем порядок
         actual_order = [ing.get_name() for ing in burger.ingredients]
         assert actual_order == expected_order
 
     @pytest.mark.parametrize("bun_price,ingredient_prices,expected_total", [
-        (100, [50, 75], 325),  # (100*2) + 50 + 75 = 325
-        (150, [30, 45, 60], 435),  # (150*2) + 30 + 45 + 60 = 435
-        (200, [], 400),  # 200*2 = 400
-        (50, [10], 110),  # (50*2) + 10 = 110
+        (100, [50, 75], 325),
+        (150, [30, 45, 60], 435),
+        (200, [], 400),
+        (50, [10], 110),
     ])
     def test_get_price_parameterized(self, bun_price, ingredient_prices, expected_total):
         burger = Burger()
 
-        # Мок булки
         mock_bun = Mock(spec=Bun)
         mock_bun.get_price.return_value = bun_price
         burger.set_buns(mock_bun)
 
-        # Моки ингредиентов
         for price in ingredient_prices:
             mock_ingredient = Mock(spec=Ingredient)
             mock_ingredient.get_price.return_value = price
@@ -163,13 +151,11 @@ class TestBurger:
     def test_get_receipt_with_bun_and_ingredients(self):
         burger = Burger()
 
-        # Мок булки
         mock_bun = Mock(spec=Bun)
         mock_bun.get_name.return_value = "Сезонная булка"
         mock_bun.get_price.return_value = 45
         burger.set_buns(mock_bun)
 
-        # Моки ингредиентов
         mock_ingredient1 = Mock(spec=Ingredient)
         mock_ingredient1.get_type.return_value = INGREDIENT_TYPE_SAUCE
         mock_ingredient1.get_name.return_value = "Сыр"
@@ -188,32 +174,30 @@ class TestBurger:
         assert "Сезонная булка" in receipt
         assert "sauce Сыр" in receipt
         assert "filling Котлета" in receipt
-        assert "150" in receipt  # (45*2) + 25 + 35 = 150
+        assert "150" in receipt
 
-    def test_get_receipt_no_bun(self):
+    def test_get_receipt_without_bun_raises_error(self):
+        """Тестируем, что get_receipt() падает с ошибкой при отсутствии булки"""
         burger = Burger()
 
+        # Не добавляем булку специально
         mock_ingredient = Mock(spec=Ingredient)
         mock_ingredient.get_type.return_value = INGREDIENT_TYPE_FILLING
         mock_ingredient.get_name.return_value = "Салат"
         mock_ingredient.get_price.return_value = 15
-
         burger.add_ingredient(mock_ingredient)
 
-        # Добавляем булку, чтобы избежать ошибки
-        mock_bun = Mock(spec=Bun)
-        mock_bun.get_name.return_value = "Булка"
-        mock_bun.get_price.return_value = 50
-        burger.set_buns(mock_bun)
+        # Проверяем, что метод действительно падает с AttributeError
+        with pytest.raises(AttributeError) as exc_info:
+            burger.get_receipt()
 
-        receipt = burger.get_receipt()
+        # Проверяем, что ошибка связана с отсутствием get_name у None
+        assert "'NoneType' object has no attribute 'get_name'" in str(exc_info.value)
 
-        assert "Салат" in receipt
-
-    def test_get_receipt_empty(self):
+    def test_get_receipt_only_bun(self):
+        """Тестируем чек для бургера только с булкой"""
         burger = Burger()
 
-        # Добавляем булку, чтобы избежать ошибки
         mock_bun = Mock(spec=Bun)
         mock_bun.get_name.return_value = "Булка"
         mock_bun.get_price.return_value = 50
@@ -221,7 +205,6 @@ class TestBurger:
 
         receipt = burger.get_receipt()
 
-        # Проверяем что чек генерируется для бургера только с булкой
         assert "Булка" in receipt
         assert "Price:" in receipt
 
