@@ -67,6 +67,29 @@ class TestBurger:
         assert burger.ingredients[0] == mock_ingredient1
         assert burger.ingredients[1] == mock_ingredient3
 
+    @pytest.mark.parametrize("index_to_remove,expected_remaining,test_description", [
+        (0, 2, "Удаление первого ингредиента"),
+        (1, 2, "Удаление среднего ингредиента"),
+        (2, 2, "Удаление последнего ингредиента"),
+    ])
+    def test_remove_ingredient_parameterized(self, index_to_remove, expected_remaining, test_description):
+        """Параметризованный тест удаления ингредиентов из разных позиций"""
+        burger = Burger()
+
+        # Добавляем 3 mock ингредиента
+        mock_ingredients = []
+        for i in range(3):
+            mock_ingredient = Mock(spec=Ingredient)
+            mock_ingredient.get_name.return_value = f"Ингредиент {i}"
+            mock_ingredients.append(mock_ingredient)
+            burger.add_ingredient(mock_ingredient)
+
+        # Удаляем ингредиент по указанному индексу
+        burger.remove_ingredient(index_to_remove)
+
+        # Проверяем количество оставшихся ингредиентов
+        assert len(burger.ingredients) == expected_remaining, f"Ошибка в: {test_description}"
+
     def test_move_ingredient(self):
         burger = Burger()
 
@@ -87,6 +110,33 @@ class TestBurger:
         assert burger.ingredients[0] == mock_ingredient2
         assert burger.ingredients[1] == mock_ingredient3
         assert burger.ingredients[2] == mock_ingredient1
+
+    @pytest.mark.parametrize("from_index,to_index,expected_order", [
+        (0, 2, ["Второй", "Третий", "Первый"]),  # Первый -> в конец
+        (2, 0, ["Третий", "Первый", "Второй"]),  # Последний -> в начало
+        (1, 1, ["Первый", "Второй", "Третий"]),  # На ту же позицию
+    ])
+    def test_move_ingredient_parameterized(self, from_index, to_index, expected_order):
+        """Параметризованный тест перемещения ингредиентов"""
+        burger = Burger()
+
+        # Создаем ингредиенты с уникальными именами
+        ingredients_data = [
+            ("Первый", Mock(spec=Ingredient)),
+            ("Второй", Mock(spec=Ingredient)),
+            ("Третий", Mock(spec=Ingredient))
+        ]
+
+        for name, mock in ingredients_data:
+            mock.get_name.return_value = name
+            burger.add_ingredient(mock)
+
+        # Перемещаем ингредиент
+        burger.move_ingredient(from_index, to_index)
+
+        # Проверяем порядок
+        actual_order = [ing.get_name() for ing in burger.ingredients]
+        assert actual_order == expected_order
 
     @pytest.mark.parametrize("bun_price,ingredient_prices,expected_total", [
         (100, [50, 75], 325),  # (100*2) + 50 + 75 = 325
